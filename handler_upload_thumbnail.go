@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"io"
+	"os"
 	"net/http"
-
+	"path/filepath"
+	"strings"
 
 	"github.com/66james99/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/google/uuid"
@@ -46,11 +48,11 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	data, err := io.ReadAll(file)
+	/* data, err := io.ReadAll(file)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error reading file", err)
 		return
-	}
+	} */
 
 	video, err := cfg.db.GetVideo(videoID)
 	if err != nil {
@@ -62,17 +64,29 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	videoThumbnails[videoID] = thumbnail{
-		data:      data,
-		mediaType: mediaType,
+	fileExt := strings.SplitAfterN(mediaType, "/", 2)[1]
+	fileName := fmt.Sprintf("%s.%s", videoID, fileExt)
+	filePath := filepath.Join(cfg.assetsRoot, fileName)
+
+	tn, err := os.Create(filePath)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't create thumbnail", err)
+		return
+	}
+	defer tn.Close()
+
+	_, err = io.Copy(tn, file)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't save thumbnail", err)
+		return
 	}
 
-	url := fmt.Sprintf("http://localhost:%s/api/thumbnails/%s", cfg.port, videoID)
+	url := fmt.Sprintf("http://localhost:%s/assets/%s.%s", cfg.port, videoID, fileExt)
 	video.ThumbnailURL = &url
+	
 
 	err = cfg.db.UpdateVideo(video)
 	if err != nil {
-		delete(videoThumbnails, videoID)
 		respondWithError(w, http.StatusInternalServerError, "Couldn't update video", err)
 		return
 	}
