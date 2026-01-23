@@ -8,11 +8,11 @@ import (
 	"net/http"
 	"os"
 	"fmt"
-	"strings"
+	// "strings"
 
 
 	"github.com/66james99/learn-file-storage-s3-golang-starter/internal/auth"
-	"github.com/66james99/learn-file-storage-s3-golang-starter/internal/database"
+	// "github.com/66james99/learn-file-storage-s3-golang-starter/internal/database"
 	"github.com/google/uuid"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -138,8 +138,9 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// videoURL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", cfg.s3Bucket, cfg.s3Region, s3key)
-	videoURL := fmt.Sprintf("%s,%s", cfg.s3Bucket, s3key)
+	videoURL := fmt.Sprintf("https://%s/%s", cfg.s3CfDistribution, s3key)
+	//videoURL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", cfg.s3Bucket, cfg.s3Region, s3key)
+	// videoURL := fmt.Sprintf("%s,%s", cfg.s3Bucket, s3key)
 	video.VideoURL = &videoURL
 	err = cfg.db.UpdateVideo(video)
 	if err != nil {
@@ -147,15 +148,20 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	signedVideo, err := cfg.dbVideoToSignedVideo(video)
+	/* signedVideo, err := cfg.dbVideoToSignedVideo(video)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't generate signed video URL", err)
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, signedVideo)
+	respondWithJSON(w, http.StatusOK, signedVideo) 
+
+	*/
+
+	respondWithJSON(w, http.StatusOK, video) 
 }
 
+/*
 func (cfg *apiConfig) dbVideoToSignedVideo(video database.Video) (database.Video, error) {
 	if video.VideoURL == nil {
 		return video, nil
@@ -173,7 +179,9 @@ func (cfg *apiConfig) dbVideoToSignedVideo(video database.Video) (database.Video
 	video.VideoURL = &presigned
 	return video, nil
 }
+*/
 
+/*  
 func generatePresignedURL(s3Client *s3.Client, bucket, key string, expireTime time.Duration) (string, error) {
 	presignClient := s3.NewPresignClient(s3Client)
 	presignedUrl, err := presignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
@@ -185,3 +193,4 @@ func generatePresignedURL(s3Client *s3.Client, bucket, key string, expireTime ti
 	}
 	return presignedUrl.URL, nil
 }
+*/
