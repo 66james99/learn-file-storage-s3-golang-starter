@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-
+	
 	"github.com/66james99/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/66james99/learn-file-storage-s3-golang-starter/internal/database"
 	"github.com/google/uuid"
+	
 )
 
 func (cfg *apiConfig) handlerVideoMetaCreate(w http.ResponseWriter, r *http.Request) {
@@ -94,8 +95,13 @@ func (cfg *apiConfig) handlerVideoGet(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusNotFound, "Couldn't get video", err)
 		return
 	}
+	signedVideo, err := cfg.dbVideoToSignedVideo(video)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't generate signed video URL", err)
+		return
+	}
 
-	respondWithJSON(w, http.StatusOK, video)
+	respondWithJSON(w, http.StatusOK, signedVideo)
 }
 
 func (cfg *apiConfig) handlerVideosRetrieve(w http.ResponseWriter, r *http.Request) {
@@ -116,5 +122,13 @@ func (cfg *apiConfig) handlerVideosRetrieve(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	for i, video := range videos {
+		video, err = cfg.dbVideoToSignedVideo(video)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Couldn't generate presigned URL", err)
+			return
+		}
+		videos[i] = video
+	}
 	respondWithJSON(w, http.StatusOK, videos)
 }
